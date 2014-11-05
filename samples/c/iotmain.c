@@ -224,14 +224,15 @@ int get_config(char * filename, IOTCONFIG * pConfig) {
    char line[256];
    int  linenum = 0;
 
+   /* Set default values */
+   pConfig->delay = pConfig->reboot  = pConfig->gpio
+                  = pConfig->camera  = pConfig->isRegistered = 0;
+   pConfig->cpu   = pConfig->ds18b20 = 1;
+
    if (!fProp) { /* No file - must be quickstart */
       syslog(LOG_INFO, "Config file not found. Going to Quickstart mode\n");
       return 0;
    }
-   /* Set default values */
-   pConfig->reboot = pConfig->gpio = pConfig->ds18b20
-                   = pConfig->camera = 0;
-   pConfig->cpu = 1;
 
    /* Now read the data */
    while (fgets(line, 256, fProp)) {
@@ -280,7 +281,9 @@ int get_config(char * filename, IOTCONFIG * pConfig) {
 
    fclose(fProp);
 
-   return 1;
+   pConfig->isRegistered = 1;
+
+   return pConfig->isRegistered;
 }
 
 void publishMessage(char *json, char *username, char *password)

@@ -114,9 +114,8 @@ void onConnectFailure(void* context, MQTTAsync_failureData* response) {
  */
 int subscribeMessage(void *context, char *topicName, int topicLen,
 		MQTTAsync_message *message) {
-	int i;
 	char* payloadptr;
-	char* command;
+	char  command[128];
 	int time_delay = 0;
 
 	payloadptr = message->payload;

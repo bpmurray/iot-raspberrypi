@@ -41,6 +41,7 @@ typedef struct {
    char id[MAXBUF];
    char authmethod[MAXBUF];
    char authtoken[MAXBUF];
+   int  isRegistered;
    int  delay;
    int  reboot;
    int  cpu;

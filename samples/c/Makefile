@@ -56,6 +56,7 @@ install: $(EXECUTABLE)
 	$(MKDIR) $(CFGDIR)
 	$(INSTALL) iot $(DIR)/iot
 	$(INSTALL) iotGetDeviceID.sh $(DIR)/iotGetDeviceID.sh
+	$(INSTALL) device.cfg.template $(CFGDIR)/device.cfg.template
 	$(CP) README.md $(DIR)/README
 	$(CP) IoTFoundation.pem $(DIR)/IoTFoundation.pem
 	$(CP) $(COMPILELIBDIR)/libpaho-mqtt3a.so.1.0 $(LIBDIR)

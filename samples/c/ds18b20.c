@@ -66,12 +66,6 @@ char *ds18b20_getJSON(IOTCONFIG *pCfg)
    if (!pCfg->ds18b20)
       return NULL;
 
-   /* Get the time normalised to GMT */
-   /* We'll let the JavaScript add the timestamp
-   time_t now = time(NULL);
-   struct tm *pTM = gmtime(&now); */
-   struct tm *pTM = NULL;
-
    /* Find the sensor directories */
    glob(W1PATT, GLOB_ONLYDIR, NULL, &globbuf);
 
@@ -102,25 +96,30 @@ char *ds18b20_getJSON(IOTCONFIG *pCfg)
    {
       /* We have the table - convert to string */
       pJSON = malloc((iY+2)*60); // Make sure we have space
-      strcpy(pJSON, "\"temperature\" : [ ");
+      pJSON[0] = 0;
 
-      for (iX=0; iX<iY; iX++)
+      if (pCfg->isRegistered)
       {
-         if (pTM)
+         strcpy(pJSON, "\"temperature\" : [ ");
+
+         for (iX=0; iX<iY; iX++)
          {
-            sprintf(pJSON+strlen(pJSON),
-               "{ \"date\": \"%02d/%02d/%04d\", \"time\": \"%02d:%02d:%02d\", ",
-               pTM->tm_mday, pTM->tm_mon+1, pTM->tm_year+1900,
-               pTM->tm_hour, pTM->tm_min, pTM->tm_sec);
-         } else {
             strcpy(pJSON+strlen(pJSON), "{ \"date\": 999,");
-         }
-         sprintf(pJSON+strlen(pJSON), "\"sensor\":\"%s\", \"temp\":%.2f }",
+            sprintf(pJSON+strlen(pJSON), "\"sensor\":\"%s\", \"temp\":%.2f }",
                  TempTab[iX].name, TempTab[iX].temp);
-         if (iX < iY-1)
-            strcat(pJSON, ", ");
+            if (iX < iY-1)
+               strcat(pJSON, ", ");
+         }
+         strcat(pJSON, " ]");
+      } else {
+         for (iX=0; iX<iY; iX++)
+         {
+            if (iX)
+               strcat(pJSON, ", ");
+            sprintf(pJSON+strlen(pJSON), "\"%s\": %.2f",
+                    TempTab[iX].name, TempTab[iX].temp);
+         }
       }
-      strcat(pJSON, " ]");
    }
 
    /* Clean up */
