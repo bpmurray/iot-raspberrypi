@@ -1,33 +1,69 @@
+CP=/bin/cp
+MKDIR=/bin/mkdir -p
+INSTALL=/usr/bin/install
+LN=/bin/ln -s
+STRIP=/usr/bin/strip
+
+VERSION=1.0-1
+ARCH=armhf
+
 DIR=$(DESTDIR)/opt/iot
 LIBDIR=$(DESTDIR)/usr/lib
 CFGDIR=$(DESTDIR)/etc/iotsample-raspberrypi
-
 COMPILELIBDIR=./lib
-LIBNAME=paho-mqtt3as
+MQTTLIB=paho-mqtt3as
 
-all: iot
+DEBUG=
+INCLUDES=-I/usr/local/include -I.
+LIBDIRS=-L/usr/local/lib -L$(COMPILELIBDIR)
+LIBS=-l$(MQTTLIB) -lwiringPi -lpthread -lssl -lm
+CFLAGS=-Wall -DDEVICE_NAME=\"bees\" $(DEBUG) -D DEBUG
+IOTSOURCES=camera.c cpustat.c ds18b20.c gpio.c iotmain.c jsonator.c
+SOURCES=mac.c MQTTPublisher.c jsonReader.c cJSON.c $(IOTSOURCES)
+OBJECTS=$(SOURCES:.c=.o)
+EXECUTABLE=iot
 
-.PHONY: all install clean distclean
+all: $(EXECUTABLE)
 
-iot: iotmain.c cpustat.c mac.c mqttPublisher.c jsonator.c iot.h jsonReader.c
-	export LIBRARY_PATH=$(COMPILELIBDIR):$(LIBRARY_PATH)
-	$(CC) iotmain.c cpustat.c mac.c mqttPublisher.c jsonator.c cJSON.c jsonReader.c -o $@ -l$(LIBNAME) -lpthread -lssl -lm -L $(COMPILELIBDIR) -I .
-	strip $@
+$(EXECUTABLE): $(OBJECTS)
+	$(CC) $(OBJECTS) $(DEBUG) -o $@ $(LIBS) $(LIBDIRS) 
+	$(STRIP) $@
 
-install: iot
-	mkdir -p $(LIBDIR)
-	mkdir -p $(DIR)
-	mkdir -p $(CFGDIR)
-	install iot $(DIR)/iot
-	cp $(COMPILELIBDIR)/libpaho-mqtt3a.so.1.0 $(LIBDIR)/libpaho-mqtt3a.so.1.0
-	cp $(COMPILELIBDIR)/libpaho-mqtt3as.so.1.0 $(LIBDIR)/libpaho-mqtt3as.so.1.0
-	ln -s libpaho-mqtt3a.so.1.0 $(LIBDIR)/libpaho-mqtt3a.so.1
-	ln -s libpaho-mqtt3as.so.1.0 $(LIBDIR)/libpaho-mqtt3as.so.1
-	ln -s libpaho-mqtt3a.so.1 $(LIBDIR)/libpaho-mqtt3a.so
-	ln -s libpaho-mqtt3as.so.1 $(LIBDIR)/libpaho-mqtt3as.so
-	install iotGetDeviceID.sh $(DIR)/iotGetDeviceID.sh
-	cp README.md $(DIR)/README
-	cp IoTFoundation.pem $(DIR)/IoTFoundation.pem
+.c.o :
+	$(CC) $(CFLAGS) -c $< $(DEBUG) $(CFLAGS) $(INCLUDES)
+
+MQTTPublisher.c : MQTTAsync.h  MQTTClientPersistence.h  
+	touch $@
+
+$(IOTSOURCES): iot.h
+	touch $@
 
 clean:
-	rm -f iot
+	rm -f iot $(OBJECTS) ../iot_$(VERSION)_$(ARCH).*
+
+deb:
+	debuild -b -us -uc
+	
+# Remember that the following 2 rules need to be run as su, i.e. calling
+#    sudo make install
+# or
+#    sudo service iot stop
+#    sudo make update
+#    sudo service iot start
+install: $(EXECUTABLE)
+	mkdir -p $(LIBDIR)
+	$(MKDIR) $(DIR)
+	$(MKDIR) $(CFGDIR)
+	$(INSTALL) iot $(DIR)/iot
+	$(CP) $(COMPILELIBDIR)/libpaho-mqtt3a.so.1.0 $(LIBDIR)/libpaho-mqtt3a.so.1.0
+	$(CP) $(COMPILELIBDIR)/libpaho-mqtt3as.so.1.0 $(LIBDIR)/libpaho-mqtt3as.so.1.0
+	$(LN) $(LIBDIR)/libpaho-mqtt3a.so.1.0 $(LIBDIR)/libpaho-mqtt3a.so.1
+	$(LN) $(LIBDIR)/libpaho-mqtt3as.so.1.0 $(LIBDIR)/libpaho-mqtt3as.so.1
+	$(LN) $(LIBDIR)/libpaho-mqtt3a.so.1 $(LIBDIR)/libpaho-mqtt3a.so
+	$(LN) $(LIBDIR)/libpaho-mqtt3as.so.1 $(LIBDIR)/libpaho-mqtt3as.so
+	$(INSTALL) iotGetDeviceID.sh $(DIR)/iotGetDeviceID.sh
+	$(CP) README.md $(DIR)/README
+	$(CP) IoTFoundation.pem $(DIR)/IoTFoundation.pem
+
+update: $(EXECUTABLE)
+	$(INSTALL) $(EXECUTABLE) $(DIR)/$(EXECUTABLE)

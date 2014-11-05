@@ -4,4 +4,14 @@ type=iotsample-raspberrypi
 id=<yourId>
 auth-method=token
 auth-token=<yourAuthToken>
+
+# Loop delay time in seconds
+delay=30
+
+# Turn on/off reporting
+cpu=1       # CPU Temp & Load
+ds18b20=1   # Temperature sensors
+camera=0    # Camera data - currently too large for Bluemix IOT
+gpio=0      # GPIO Pins
+
 #End of Configuration file
