@@ -4,7 +4,7 @@ INSTALL=/usr/bin/install
 LN=/bin/ln -s
 STRIP=/usr/bin/strip
 
-VERSION=1.0-1
+VERSION=1.0-1-BPM
 ARCH=armhf
 
 DIR=$(DESTDIR)/opt/iot
@@ -15,11 +15,11 @@ MQTTLIB=paho-mqtt3as
 
 DEBUG=
 INCLUDES=-I/usr/local/include -I.
-LIBDIRS=-L/usr/local/lib -L$(COMPILELIBDIR)
+LIBDIRS=-L/usr/local/lib -L$(LIBDIR) -L$(COMPILELIBDIR)
 LIBS=-l$(MQTTLIB) -lwiringPi -lpthread -lssl -lm
 CFLAGS=-Wall -DDEVICE_NAME=\"bees\" $(DEBUG) -D DEBUG
 IOTSOURCES=camera.c cpustat.c ds18b20.c gpio.c iotmain.c jsonator.c
-SOURCES=mac.c MQTTPublisher.c jsonReader.c cJSON.c $(IOTSOURCES)
+SOURCES=mac.c mqttPublisher.c jsonReader.c cJSON.c $(IOTSOURCES)
 OBJECTS=$(SOURCES:.c=.o)
 EXECUTABLE=iot
 
@@ -32,7 +32,7 @@ $(EXECUTABLE): $(OBJECTS)
 .c.o :
 	$(CC) $(CFLAGS) -c $< $(DEBUG) $(CFLAGS) $(INCLUDES)
 
-MQTTPublisher.c : MQTTAsync.h  MQTTClientPersistence.h  
+mqttPublisher.c : MQTTAsync.h  MQTTClientPersistence.h  
 	touch $@
 
 $(IOTSOURCES): iot.h
@@ -55,15 +55,15 @@ install: $(EXECUTABLE)
 	$(MKDIR) $(DIR)
 	$(MKDIR) $(CFGDIR)
 	$(INSTALL) iot $(DIR)/iot
-	$(CP) $(COMPILELIBDIR)/libpaho-mqtt3a.so.1.0 $(LIBDIR)/libpaho-mqtt3a.so.1.0
-	$(CP) $(COMPILELIBDIR)/libpaho-mqtt3as.so.1.0 $(LIBDIR)/libpaho-mqtt3as.so.1.0
-	$(LN) $(LIBDIR)/libpaho-mqtt3a.so.1.0 $(LIBDIR)/libpaho-mqtt3a.so.1
-	$(LN) $(LIBDIR)/libpaho-mqtt3as.so.1.0 $(LIBDIR)/libpaho-mqtt3as.so.1
-	$(LN) $(LIBDIR)/libpaho-mqtt3a.so.1 $(LIBDIR)/libpaho-mqtt3a.so
-	$(LN) $(LIBDIR)/libpaho-mqtt3as.so.1 $(LIBDIR)/libpaho-mqtt3as.so
 	$(INSTALL) iotGetDeviceID.sh $(DIR)/iotGetDeviceID.sh
 	$(CP) README.md $(DIR)/README
 	$(CP) IoTFoundation.pem $(DIR)/IoTFoundation.pem
+	$(CP) $(COMPILELIBDIR)/libpaho-mqtt3a.so.1.0 $(LIBDIR)
+	$(CP) $(COMPILELIBDIR)/libpaho-mqtt3as.so.1.0 $(LIBDIR)
+	cd $(LIBDIR) && $(LN) ./libpaho-mqtt3a.so.1.0  ./libpaho-mqtt3a.so.1
+	cd $(LIBDIR) && $(LN) ./libpaho-mqtt3as.so.1.0 ./libpaho-mqtt3as.so.1
+	cd $(LIBDIR) && $(LN) ./libpaho-mqtt3a.so.1    ./libpaho-mqtt3a.so
+	cd $(LIBDIR) && $(LN) ./libpaho-mqtt3as.so.1   ./libpaho-mqtt3as.so
 
 update: $(EXECUTABLE)
 	$(INSTALL) $(EXECUTABLE) $(DIR)/$(EXECUTABLE)
